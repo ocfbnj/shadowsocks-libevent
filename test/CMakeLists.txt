@@ -12,7 +12,6 @@ if (GTest_FOUND)
 
             ${MBEDTLS}
             ${MBEDCRYPTO}
-            ${MBEDX509}
 
             ${SODIUM})
 
