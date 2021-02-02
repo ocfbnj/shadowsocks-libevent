@@ -33,7 +33,6 @@ list(APPEND deps
 
         ${MBEDTLS}
         ${MBEDCRYPTO}
-        ${MBEDX509}
 
         ${SODIUM})
 
