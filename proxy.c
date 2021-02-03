@@ -48,12 +48,12 @@ void free_server_proxy_context(struct server_proxy_context* ctx) {
     free(ctx);
 }
 
-void client_proxy_read_cb(struct bufferevent* bev, void* ctx) {
-    struct client_proxy_context* status = (struct client_proxy_context*)ctx;
+void client_proxy_read_cb(struct bufferevent* bev, void* arg) {
+    struct client_proxy_context* ctx = (struct client_proxy_context*)arg;
     struct evbuffer* in = bufferevent_get_input(bev);
-    struct evbuffer* out = bufferevent_get_output(status->out_bev);
+    struct evbuffer* out = bufferevent_get_output(ctx->out_bev);
 
-    client_decrypt_read(in, out, status->de_cipher);
+    client_decrypt_read(in, out, ctx->de_cipher);
 }
 
 void client_proxy_event_cb(struct bufferevent* bev, short events, void* arg) {

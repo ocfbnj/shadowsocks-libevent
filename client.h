@@ -1,6 +1,8 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
+#include <event2/util.h>
+
 #include "socks.h"
 
 #ifdef __cplusplus
@@ -9,7 +11,6 @@ extern "C" {
 
 struct evbuffer;
 struct bufferevent;
-struct client_context;
 struct sockaddr;
 struct cipher;
 struct evconnlistener;
@@ -24,13 +25,13 @@ struct client_context {
 struct client_context* alloc_client_context();
 void free_client_context(struct client_context* ctx);
 
-void client_accept_error_cb(struct evconnlistener* listener, void* ctx);
+void client_accept_error_cb(struct evconnlistener* listener, void* arg);
 void client_accept_cb(struct evconnlistener* listener, evutil_socket_t fd, struct sockaddr* addr,
                       int socklen, void* arg);
 
-void client_read_cb(struct bufferevent* bev, void* ctx);
-void client_write_cb(struct bufferevent* bev, void* ctx);
-void client_event_cb(struct bufferevent* bev, short events, void* ctx);
+void client_read_cb(struct bufferevent* bev, void* arg);
+void client_write_cb(struct bufferevent* bev, void* arg);
+void client_event_cb(struct bufferevent* bev, short events, void* arg);
 
 void client_encrypt_write(struct evbuffer* source, struct evbuffer* destination,
                           unsigned char* tgt_addr, struct cipher* en_cipher);

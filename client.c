@@ -190,7 +190,7 @@ void client_accept_cb(struct evconnlistener* listener, evutil_socket_t fd, struc
     bufferevent_enable(bev, EV_READ | EV_WRITE);
 }
 
-void client_accept_error_cb(struct evconnlistener* listener, void* ctx) {
+void client_accept_error_cb(struct evconnlistener* listener, void* arg) {
     int err = EVUTIL_SOCKET_ERROR();
     LOG_EXIT("Got an error %d (%s) on the listener. "
              "Shutting down.",
