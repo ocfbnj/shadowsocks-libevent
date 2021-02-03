@@ -20,6 +20,8 @@ struct client_context;
 void stage1(struct bufferevent* bev, struct client_context* status);
 void stage2(struct bufferevent* bev, struct client_context* status);
 
+size_t read_tgt_addr(unsigned char* tgt_addr, unsigned char* out);
+
 // SOCKS request command defined in RFC 1928 section 4.
 enum CMD { CONNECT = 0x01, BIND = 0x02, UDP_ASSOCIATE = 0x03 };
 
