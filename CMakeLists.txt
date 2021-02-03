@@ -13,6 +13,7 @@ list(APPEND src
         socks.c
         tcp.c
         client.c
+        server.c
         proxy.c
         crypto.c
         aead.c
