@@ -3,10 +3,10 @@
 
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
+#include <event2/dns.h>
 #include <event2/event.h>
 #include <event2/listener.h>
 #include <sodium.h>
-#include <event2/dns.h>
 
 #include "aead.h"
 #include "config.h"
@@ -136,8 +136,10 @@ void server_decrypt_read(struct bufferevent* bev, struct server_context* ctx) {
 
                 uint16_t port = ntohs(*(uint16_t*)(plaintext + port_offset));
 
-                struct evdns_base* dns_base = evdns_base_new(base, EVDNS_BASE_INITIALIZE_NAMESERVERS);
-                bufferevent_socket_connect_hostname(proxy_bev, dns_base, AF_UNSPEC, domain_name, port);
+                struct evdns_base* dns_base =
+                    evdns_base_new(base, EVDNS_BASE_INITIALIZE_NAMESERVERS);
+                bufferevent_socket_connect_hostname(proxy_bev, dns_base, AF_UNSPEC, domain_name,
+                                                    port);
             } break;
             case IPv6: {
                 struct sockaddr_in6 sock_addr;
