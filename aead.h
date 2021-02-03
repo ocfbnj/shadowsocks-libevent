@@ -11,14 +11,14 @@ extern "C" {
 
 struct cipher;
 
-// Returned the length of ciphertext on success.
-// Returned -2 indicates that the data is too short and needs to be tried again.
-// Returned -1 on error.
+// On success, 0 is returned.
+// On error, -1 is returned.
 int aead_encrypt(struct cipher* c, const unsigned char* plaintext, size_t plaintext_len,
                  unsigned char* ciphertext);
 
-// On success, 0 is returned.
-// On error, -1 is returned.
+// Returned the length of ciphertext on success.
+// Returned -2 indicates that the data is too short and needs to be tried again.
+// Returned -1 on error.
 int aead_decrypt(struct cipher* c, const unsigned char* ciphertext, size_t ciphertext_len,
                  unsigned char* plaintext);
 
