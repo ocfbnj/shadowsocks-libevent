@@ -80,26 +80,6 @@ void client_decrypt_read(struct evbuffer* source, struct evbuffer* destination,
     }
 }
 
-static size_t read_tgt_addr(unsigned char* tgt_addr, unsigned char* out) {
-    switch (tgt_addr[0]) {
-    case IPv4:
-        memcpy(out, tgt_addr, 1 + 4 + 2);
-        return 1 + 4 + 2;
-    case DOMAINNAME:
-        memcpy(out, tgt_addr, 1 + 1 + tgt_addr[1] + 2);
-        return 1 + 1 + tgt_addr[1] + 2;
-    case IPv6:
-        memcpy(out, tgt_addr, 1 + 16 + 2);
-        return 1 + 16 + 2;
-    default:
-        break;
-    }
-
-    LOG_WARN("Unexpected program execution.");
-
-    return 0;
-}
-
 void client_encrypt_write(struct evbuffer* source, struct evbuffer* destination,
                           unsigned char* tgt_addr, struct cipher* en_cipher) {
     // [salt][target address][payload]

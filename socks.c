@@ -205,3 +205,23 @@ void stage2(struct bufferevent* bev, struct client_context* ctx) {
     // ok
     ctx->stage = 0;
 }
+
+size_t read_tgt_addr(unsigned char* tgt_addr, unsigned char* out) {
+    switch (tgt_addr[0]) {
+    case IPv4:
+        memcpy(out, tgt_addr, 1 + 4 + 2);
+        return 1 + 4 + 2;
+    case DOMAINNAME:
+        memcpy(out, tgt_addr, 1 + 1 + tgt_addr[1] + 2);
+        return 1 + 1 + tgt_addr[1] + 2;
+    case IPv6:
+        memcpy(out, tgt_addr, 1 + 16 + 2);
+        return 1 + 16 + 2;
+    default:
+        break;
+    }
+
+    LOG_WARN("Unexpected program execution.");
+
+    return 0;
+}
