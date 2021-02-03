@@ -1,7 +1,7 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include <event2/event.h>
+#include <event2/util.h>
 
 #ifdef __cplusplus
 extern "C" {

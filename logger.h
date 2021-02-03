@@ -3,8 +3,8 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 
 #define LOG_TIME                                                                                   \

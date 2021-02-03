@@ -21,9 +21,7 @@ void set_mode(enum mode m) {
     }
 }
 
-enum mode get_mode() {
-    return server_mode ? SERVER : CLIENT;
-}
+enum mode get_mode() { return server_mode ? SERVER : CLIENT; }
 
 const char* get_config(enum config c) {
     const char* ret = NULL;
