@@ -8,6 +8,7 @@ extern "C" {
 struct bufferevent;
 struct client_proxy_context;
 struct cipher;
+struct evdns_base;
 
 struct client_proxy_context {
     struct bufferevent* out_bev;

@@ -16,6 +16,8 @@
 #include "server.h"
 #include "socks.h"
 
+extern struct evdns_base* dns_base;
+
 struct server_context* alloc_server_context() {
     struct server_context* context =
         (struct server_context*)calloc(1, sizeof(struct server_context));
@@ -66,8 +68,17 @@ void server_decrypt_read(struct bufferevent* bev, struct server_context* ctx) {
         if (plaintext_len == -2) {
             return;
         } else if (plaintext_len == -1) {
-            LOG_WARN("Unexpected program execution.");
-            break;
+            if (ctx->out_bev != NULL) {
+                struct server_proxy_context* proxy_ctx;
+                bufferevent_getcb(ctx->out_bev, NULL, NULL, NULL, (void**)&proxy_ctx);
+
+                free_server_proxy_context(proxy_ctx);
+                bufferevent_free(ctx->out_bev);
+            }
+            free_server_context(ctx);
+            bufferevent_free(bev);
+
+            return;
         }
 
         int ciphertext_len = 2 + 2 * de_cipher->tag_size + plaintext_len;
@@ -136,8 +147,6 @@ void server_decrypt_read(struct bufferevent* bev, struct server_context* ctx) {
 
                 uint16_t port = ntohs(*(uint16_t*)(plaintext + port_offset));
 
-                struct evdns_base* dns_base =
-                    evdns_base_new(base, EVDNS_BASE_INITIALIZE_NAMESERVERS);
                 bufferevent_socket_connect_hostname(proxy_bev, dns_base, AF_UNSPEC, domain_name,
                                                     port);
             } break;
@@ -206,10 +215,14 @@ void server_event_cb(struct bufferevent* bev, short events, void* arg) {
         struct server_context* ctx = (struct server_context*)arg;
 
         if (ctx->out_bev != NULL) {
+            struct server_proxy_context* proxy_ctx;
+            bufferevent_getcb(ctx->out_bev, NULL, NULL, NULL, (void**)&proxy_ctx);
+
+            free_server_proxy_context(proxy_ctx);
             bufferevent_free(ctx->out_bev);
         }
-        bufferevent_free(bev);
         free_server_context(ctx);
+        bufferevent_free(bev);
     }
 }
 

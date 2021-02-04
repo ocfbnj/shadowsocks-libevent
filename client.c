@@ -12,6 +12,7 @@
 #include "config.h"
 #include "crypto.h"
 #include "logger.h"
+#include "proxy.h"
 #include "socks.h"
 #include "tcp.h"
 
@@ -33,9 +34,11 @@ void free_client_context(struct client_context* ctx) {
     free(ctx);
 }
 
-void client_decrypt_read(struct evbuffer* source, struct evbuffer* destination,
-                         struct cipher* de_cipher) {
+void client_decrypt_read(struct bufferevent* bev, struct client_proxy_context* ctx) {
     // [salt]([encrypted payload length][length tag][encrypted payload][payload tag])...
+    struct evbuffer* source = bufferevent_get_input(bev);
+    struct evbuffer* destination = bufferevent_get_output(ctx->out_bev);
+    struct cipher* de_cipher = ctx->de_cipher;
 
     static unsigned char zero[MAX_SALT_LENGTH];
 
@@ -61,9 +64,10 @@ void client_decrypt_read(struct evbuffer* source, struct evbuffer* destination,
 
         size_t data_len = evbuffer_get_length(source);
         int plaintext_len = aead_decrypt(de_cipher, ciphertext, data_len, plaintext);
-        int ciphertext_len = 2 + 2 * de_cipher->tag_size + plaintext_len;
 
         if (plaintext_len >= 0) {
+            int ciphertext_len = 2 + 2 * de_cipher->tag_size + plaintext_len;
+
             evbuffer_drain(source, ciphertext_len);
             evbuffer_add(destination, plaintext, plaintext_len);
 
@@ -73,9 +77,18 @@ void client_decrypt_read(struct evbuffer* source, struct evbuffer* destination,
 
         } else if (plaintext_len == -2) {
             return;
-        } else {
-            LOG_WARN("Unexpected program execution.");
-            break;
+        } else if (plaintext_len == -1) {
+            if (ctx->out_bev != NULL) {
+                struct client_context* clnt_ctx;
+                bufferevent_getcb(ctx->out_bev, NULL, NULL, NULL, (void**)&clnt_ctx);
+
+                free_client_context(clnt_ctx);
+                bufferevent_free(ctx->out_bev);
+            }
+            free_client_proxy_context(ctx);
+            bufferevent_free(bev);
+
+            return;
         }
     }
 }
@@ -152,10 +165,14 @@ void client_write_cb(struct bufferevent* bev, void* arg) {
     struct client_context* ctx = (struct client_context*)arg;
     if (ctx->stage < 0) {
         if (ctx->out_bev != NULL) {
+            struct client_proxy_context* proxy_ctx;
+            bufferevent_getcb(ctx->out_bev, NULL, NULL, NULL, (void**)&proxy_ctx);
+
+            free_client_proxy_context(proxy_ctx);
             bufferevent_free(ctx->out_bev);
         }
-        bufferevent_free(bev);
         free_client_context(ctx);
+        bufferevent_free(bev);
     }
 }
 
@@ -169,10 +186,14 @@ void client_event_cb(struct bufferevent* bev, short events, void* arg) {
         struct client_context* ctx = (struct client_context*)arg;
 
         if (ctx->out_bev != NULL) {
+            struct client_proxy_context* proxy_ctx;
+            bufferevent_getcb(ctx->out_bev, NULL, NULL, NULL, (void**)&proxy_ctx);
+
+            free_client_proxy_context(proxy_ctx);
             bufferevent_free(ctx->out_bev);
         }
-        bufferevent_free(bev);
         free_client_context(ctx);
+        bufferevent_free(bev);
     }
 }
 

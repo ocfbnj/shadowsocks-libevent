@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <event2/bufferevent.h>
+#include <event2/dns.h>
 #include <event2/event.h>
 #include <event2/listener.h>
 
@@ -11,6 +12,8 @@
 #include "logger.h"
 #include "server.h"
 #include "tcp.h"
+
+struct evdns_base* dns_base;
 
 void tcp_client() {
     struct event_base* base = event_base_new();
@@ -33,6 +36,8 @@ void tcp_client() {
     }
     evconnlistener_set_error_cb(listener, client_accept_error_cb);
 
+    dns_base = evdns_base_new(base, 1);
+
     // log listen information of local server
     char addr_str[STR_ADDR_LEN];
     str_addr(addr_str, sizeof addr_str, (struct sockaddr*)&listen_addr);
@@ -43,6 +48,7 @@ void tcp_client() {
     // The code shouldn't get there.
     LOG_WARN("Unexpected program execution: event_base_dispatch() returned.");
 
+    evdns_base_free(dns_base, 0);
     evconnlistener_free(listener);
     event_base_free(base);
 }
@@ -67,6 +73,8 @@ void tcp_server() {
     }
     evconnlistener_set_error_cb(listener, server_accept_error_cb);
 
+    dns_base = evdns_base_new(base, 1);
+
     // log listen information of remote server
     char addr_str[STR_ADDR_LEN];
     str_addr(addr_str, sizeof addr_str, (struct sockaddr*)&listen_addr);
@@ -77,6 +85,7 @@ void tcp_server() {
     // The code shouldn't get there.
     LOG_WARN("Unexpected program execution: event_base_dispatch() returned.");
 
+    evdns_base_free(dns_base, 0);
     evconnlistener_free(listener);
     event_base_free(base);
 }

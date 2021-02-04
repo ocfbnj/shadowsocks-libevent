@@ -4,6 +4,7 @@
 
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
+#include <event2/dns.h>
 
 #include "client.h"
 #include "config.h"
@@ -50,10 +51,7 @@ void free_server_proxy_context(struct server_proxy_context* ctx) {
 
 void client_proxy_read_cb(struct bufferevent* bev, void* arg) {
     struct client_proxy_context* ctx = (struct client_proxy_context*)arg;
-    struct evbuffer* in = bufferevent_get_input(bev);
-    struct evbuffer* out = bufferevent_get_output(ctx->out_bev);
-
-    client_decrypt_read(in, out, ctx->de_cipher);
+    client_decrypt_read(bev, ctx);
 }
 
 void client_proxy_event_cb(struct bufferevent* bev, short events, void* arg) {
@@ -69,11 +67,15 @@ void client_proxy_event_cb(struct bufferevent* bev, short events, void* arg) {
         }
 
         if (events & (BEV_EVENT_EOF | BEV_EVENT_ERROR)) {
-            if (ctx->out_bev) {
+            if (ctx->out_bev != NULL) {
+                struct client_context* clnt_ctx;
+                bufferevent_getcb(ctx->out_bev, NULL, NULL, NULL, (void**)&clnt_ctx);
+
+                free_client_context(clnt_ctx);
                 bufferevent_free(ctx->out_bev);
             }
-            bufferevent_free(bev);
             free_client_proxy_context(ctx);
+            bufferevent_free(bev);
         }
     }
 }
@@ -96,6 +98,10 @@ void server_proxy_event_cb(struct bufferevent* bev, short events, void* arg) {
 
     if (events & (BEV_EVENT_EOF | BEV_EVENT_ERROR)) {
         if (ctx->out_bev) {
+            struct server_context* serv_ctx;
+            bufferevent_getcb(ctx->out_bev, NULL, NULL, NULL, (void**)&serv_ctx);
+
+            free_server_context(serv_ctx);
             bufferevent_free(ctx->out_bev);
         }
         bufferevent_free(bev);
