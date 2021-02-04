@@ -22,8 +22,10 @@ int aead_encrypt(struct cipher* c, const unsigned char* plaintext, size_t plaint
 int aead_decrypt(struct cipher* c, const unsigned char* ciphertext, size_t ciphertext_len,
                  unsigned char* plaintext);
 
-// Copy from shadowsocks-libev.
-void derive_key(const char* password, unsigned char* key, size_t key_len);
+void HKDF_SHA1(const unsigned char* key, size_t key_len, const unsigned char* salt, size_t salt_len,
+               const unsigned char* info, size_t info_len, unsigned char* out);
+void AEAD_CHACHA20_POLY1305_HKDF_SHA1(const unsigned char* key, const unsigned char* salt,
+                                      unsigned char* out);
 
 #ifdef __cplusplus
 }

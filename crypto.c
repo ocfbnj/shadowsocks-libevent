@@ -1,9 +1,8 @@
-#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <mbedtls/hkdf.h>
 #include <mbedtls/md.h>
 
-#include "aead.h"
 #include "crypto.h"
 #include "logger.h"
 
@@ -29,17 +28,40 @@ struct cipher* alloc_cipher(enum method m, const char* password) {
     return NULL;
 }
 
-void free_cipher(struct cipher* c) {
-    free(c);
-}
+void free_cipher(struct cipher* c) { free(c); }
 
-void HKDF_SHA1(const unsigned char* key, size_t key_len, const unsigned char* salt, size_t salt_len,
-               const unsigned char* info, size_t info_len, unsigned char* out) {
-    const mbedtls_md_info_t* md_info = mbedtls_md_info_from_string("SHA1");
-    mbedtls_hkdf(md_info, salt, salt_len, key, key_len, info, info_len, out, key_len);
-}
+void derive_key(const char* password, unsigned char* key, size_t key_len) {
+    size_t datal;
+    datal = strlen((const char*)password);
 
-void AEAD_CHACHA20_POLY1305_HKDF_SHA1(const unsigned char* key, const unsigned char* salt,
-                                      unsigned char* out) {
-    HKDF_SHA1(key, 32, salt, 32, SUBKEY_INFO, SUBKEY_INFO_LEN, out);
+    const mbedtls_md_info_t* md = mbedtls_md_info_from_string("MD5");
+    if (md == NULL) {
+        LOG_EXIT("MD5 Digest not found in crypto library");
+    }
+
+    mbedtls_md_context_t c;
+    unsigned char md_buf[MBEDTLS_MD_MAX_SIZE];
+    int addmd;
+    unsigned int i, j, mds;
+
+    mds = mbedtls_md_get_size(md);
+    memset(&c, 0, sizeof(mbedtls_md_context_t));
+    mbedtls_md_setup(&c, md, 0);
+
+    for (j = 0, addmd = 0; j < key_len; addmd++) {
+        mbedtls_md_starts(&c);
+        if (addmd) {
+            mbedtls_md_update(&c, md_buf, mds);
+        }
+        mbedtls_md_update(&c, (uint8_t*)password, datal);
+        mbedtls_md_finish(&c, &(md_buf[0]));
+
+        for (i = 0; i < mds; i++, j++) {
+            if (j >= key_len)
+                break;
+            key[j] = md_buf[i];
+        }
+    }
+
+    mbedtls_md_free(&c);
 }
