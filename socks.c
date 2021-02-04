@@ -34,10 +34,15 @@ void stage1(struct bufferevent* bev, struct client_context* ctx) {
         LOG_WARN("No supported version 0x%x from client.", req_data[0]);
 
         if (ctx->out_bev != NULL) {
+            struct client_proxy_context* proxy_ctx;
+            bufferevent_getcb(ctx->out_bev, NULL, NULL, NULL, (void**)&proxy_ctx);
+
+            free_client_proxy_context(proxy_ctx);
             bufferevent_free(ctx->out_bev);
         }
-        bufferevent_free(bev);
         free_client_context(ctx);
+        bufferevent_free(bev);
+
         return;
     }
 
@@ -117,10 +122,15 @@ void stage2(struct bufferevent* bev, struct client_context* ctx) {
         LOG_WARN("No supported version 0x%x from client.", req_data[0]);
 
         if (ctx->out_bev != NULL) {
+            struct client_proxy_context* proxy_ctx;
+            bufferevent_getcb(ctx->out_bev, NULL, NULL, NULL, (void**)&proxy_ctx);
+
+            free_client_proxy_context(proxy_ctx);
             bufferevent_free(ctx->out_bev);
         }
-        bufferevent_free(bev);
         free_client_context(ctx);
+        bufferevent_free(bev);
+
         return;
     }
 
