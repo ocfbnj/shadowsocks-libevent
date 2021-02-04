@@ -6,7 +6,19 @@
 #include "../aead.h"
 #include "../crypto.h"
 
-GTEST_TEST(HKDF_SHA1, AEAD_CHACHA20_POLY1305) {
+GTEST_TEST(KDF, derive_key) {
+    const char* password = "hehe";
+
+    unsigned char key[32];
+    unsigned char expect_key[32] = {82,  156, 168, 5,   10,  0,   24,  7,   144, 207, 136,
+                                    182, 52,  104, 130, 106, 109, 81,  225, 207, 24,  87,
+                                    148, 16,  101, 57,  172, 239, 219, 100, 183, 95};
+    derive_key(password, key, sizeof key);
+
+    ASSERT_TRUE(memcmp(key, expect_key, 32) == 0);
+}
+
+GTEST_TEST(AEAD, AEAD_CHACHA20_POLY1305_HKDF_SHA1) {
     unsigned char key[32] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                              1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
     unsigned char subkey[32];
@@ -44,16 +56,4 @@ GTEST_TEST(AEAD, AEAD_CHACHA20_POLY1305) {
     ASSERT_TRUE(aead_decrypt(de_c, ciphertext, sizeof ciphertext, plaintext) >= 0);
 
     ASSERT_TRUE(memcmp(data, plaintext, DATA_SIZE) == 0);
-}
-
-GTEST_TEST(AEAD, derive_key) {
-    const char* password = "hehe";
-
-    unsigned char key[32];
-    unsigned char expect_key[32] = {82,  156, 168, 5,   10,  0,   24,  7,   144, 207, 136,
-                                    182, 52,  104, 130, 106, 109, 81,  225, 207, 24,  87,
-                                    148, 16,  101, 57,  172, 239, 219, 100, 183, 95};
-    derive_key(password, key, sizeof key);
-
-    ASSERT_TRUE(memcmp(key, expect_key, 32) == 0);
 }

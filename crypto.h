@@ -35,11 +35,8 @@ struct cipher {
 struct cipher* alloc_cipher(enum method m, const char* password);
 void free_cipher(struct cipher* c);
 
-void HKDF_SHA1(const unsigned char* key, size_t key_len, const unsigned char* salt, size_t salt_len,
-               const unsigned char* info, size_t info_len, unsigned char* out);
-
-void AEAD_CHACHA20_POLY1305_HKDF_SHA1(const unsigned char* key, const unsigned char* salt,
-                                      unsigned char* out);
+// Copy from shadowsocks-libev.
+void derive_key(const char* password, unsigned char* key, size_t key_len);
 
 #ifdef __cplusplus
 }
