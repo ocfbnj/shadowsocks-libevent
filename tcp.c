@@ -1,7 +1,7 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <assert.h>
 #include <event2/bufferevent.h>
 #include <event2/dns.h>
 #include <event2/event.h>
@@ -15,80 +15,59 @@
 
 struct evdns_base* dns_base;
 
-void tcp_client() {
+static void accept_error_cb(struct evconnlistener* listener, void* arg) {
+    LOG_EXIT("Got an error on the listener: %s",
+             evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR()));
+}
+
+static void listen_on(const char* port, evconnlistener_cb accept_cb) {
     struct event_base* base = event_base_new();
     if (base == NULL) {
-        LOG_EXIT("Cannot create event_base.");
+        LOG_EXIT("Cannot create event_base");
     }
-
-    // listen socket
-    struct sockaddr_in listen_addr;
-    memset(&listen_addr, 0, sizeof listen_addr);
-    listen_addr.sin_family = AF_INET;
-    listen_addr.sin_port = htons((int)strtol(get_config(LOCAL_PORT), NULL, 10));
-    listen_addr.sin_addr.s_addr = INADDR_ANY;
-
-    struct evconnlistener* listener = evconnlistener_new_bind(
-        base, client_accept_cb, NULL, LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE, -1,
-        (struct sockaddr*)&listen_addr, sizeof listen_addr);
-    if (listener == NULL) {
-        LOG_EXIT("Cannot create evconnlistener.");
-    }
-    evconnlistener_set_error_cb(listener, client_accept_error_cb);
 
     dns_base = evdns_base_new(base, 1);
 
-    // log listen information of local server
+    struct evutil_addrinfo hints;
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags = EVUTIL_AI_ADDRCONFIG | EVUTIL_AI_PASSIVE;
+
+    struct evutil_addrinfo* res;
+    if (evutil_getaddrinfo(NULL, port, &hints, &res) != 0) {
+        LOG_EXIT("evutil_getaddrinfo() error");
+    }
+
+    struct evconnlistener* listener =
+        evconnlistener_new_bind(base, accept_cb, NULL, LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE,
+                                -1, res->ai_addr, res->ai_addrlen);
+    if (listener == NULL) {
+        LOG_EXIT("Cannot create evconnlistener");
+    }
+    evconnlistener_set_error_cb(listener, accept_error_cb);
+
+    // log listen information
     char addr_str[STR_ADDR_LEN];
-    str_addr(addr_str, sizeof addr_str, (struct sockaddr*)&listen_addr);
+    str_addr(addr_str, sizeof addr_str, res->ai_addr);
     LOG_MSG("Listen on %s", addr_str);
+
+    evutil_freeaddrinfo(res);
 
     event_base_dispatch(base);
 
     // The code shouldn't get there.
-    LOG_WARN("Unexpected program execution: event_base_dispatch() returned.");
+    LOG_WARN("Unexpected program execution: event_base_dispatch() returned");
 
     evdns_base_free(dns_base, 0);
     evconnlistener_free(listener);
     event_base_free(base);
 }
 
-void tcp_server() {
-    struct event_base* base = event_base_new();
-    if (base == NULL) {
-        LOG_EXIT("Cannot create event_base.");
-    }
+void tcp_client() { listen_on(get_config(LOCAL_PORT), client_accept_cb); }
 
-    struct sockaddr_in listen_addr;
-    memset(&listen_addr, 0, sizeof listen_addr);
-    listen_addr.sin_family = AF_INET;
-    listen_addr.sin_port = htons((int)strtol(get_config(SERVER_PORT), NULL, 10));
-    listen_addr.sin_addr.s_addr = INADDR_ANY;
-
-    struct evconnlistener* listener = evconnlistener_new_bind(
-        base, server_accept_cb, NULL, LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE, -1,
-        (struct sockaddr*)&listen_addr, sizeof listen_addr);
-    if (listener == NULL) {
-        LOG_EXIT("Cannot create evconnlistener.");
-    }
-    evconnlistener_set_error_cb(listener, server_accept_error_cb);
-
-    dns_base = evdns_base_new(base, 1);
-
-    // log listen information of remote server
-    char addr_str[STR_ADDR_LEN];
-    str_addr(addr_str, sizeof addr_str, (struct sockaddr*)&listen_addr);
-    LOG_MSG("Listen on %s", addr_str);
-
-    event_base_dispatch(base);
-
-    // The code shouldn't get there.
-    LOG_WARN("Unexpected program execution: event_base_dispatch() returned.");
-
-    evdns_base_free(dns_base, 0);
-    evconnlistener_free(listener);
-    event_base_free(base);
-}
+void tcp_server() { listen_on(get_config(SERVER_PORT), server_accept_cb); }
 
 void str_addr(char* str, int str_len, struct sockaddr* addr) {
     assert(str_len >= STR_ADDR_LEN);

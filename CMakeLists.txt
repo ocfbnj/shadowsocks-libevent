@@ -10,14 +10,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 add_subdirectory(test)
 
 list(APPEND src
-        socks.c
-        tcp.c
-        client.c
-        server.c
-        proxy.c
-        crypto.c
         aead.c
+        cipher.c
+        context.c
+        server.c
+        client.c
+        proxy.c
+        socks.c
         config.c
+        tcp.c
         main.c)
 
 set(LIBEVENT_STATIC_LINK TRUE)

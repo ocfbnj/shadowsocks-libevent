@@ -1,17 +1,17 @@
-#include <stdint.h>
+#include <assert.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <mbedtls/md.h>
 
-#include "crypto.h"
+#include "aead.h"
+#include "cipher.h"
 #include "logger.h"
 
 struct cipher* alloc_cipher(enum method m, const char* password) {
     if (m == AEAD_CHACHA20_POLY1305) {
         struct cipher* c = calloc(1, sizeof(struct cipher));
-        if (c == NULL) {
-            LOG_EXIT("Cannot create cipher.");
-        }
+        assert(c);
 
         c->key_size = 32;
         c->salt_size = 32;
@@ -29,6 +29,24 @@ struct cipher* alloc_cipher(enum method m, const char* password) {
 }
 
 void free_cipher(struct cipher* c) { free(c); }
+
+struct cipher_context* alloc_cipher_context(enum method m, const char* password) {
+    struct cipher_context* ctx = calloc(1, sizeof(struct cipher_context));
+    assert(ctx);
+
+    ctx->de_cipher = alloc_cipher(m, password);
+    ctx->en_cipher = alloc_cipher(m, password);
+    assert(ctx->de_cipher && ctx->en_cipher);
+
+    return ctx;
+}
+
+void free_cipher_context(void* ctx) {
+    struct cipher_context* c = (struct cipher_context*)ctx;
+    free_cipher(c->de_cipher);
+    free_cipher(c->en_cipher);
+    free(c);
+}
 
 void derive_key(const char* password, unsigned char* key, size_t key_len) {
     size_t datal;
