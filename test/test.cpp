@@ -4,7 +4,7 @@
 #include <sodium.h>
 
 #include "../aead.h"
-#include "../crypto.h"
+#include "../cipher.h"
 
 GTEST_TEST(KDF, derive_key) {
     const char* password = "hehe";
@@ -52,8 +52,8 @@ GTEST_TEST(AEAD, AEAD_CHACHA20_POLY1305) {
     randombytes_buf(en_c->salt, en_c->salt_size);
     memcpy(de_c->salt, en_c->salt, en_c->salt_size);
 
-    ASSERT_TRUE(aead_encrypt(en_c, data, DATA_SIZE, ciphertext) == 0);
-    ASSERT_TRUE(aead_decrypt(de_c, ciphertext, sizeof ciphertext, plaintext) >= 0);
+    ASSERT_TRUE(aead_encrypt(en_c, data, DATA_SIZE, ciphertext, NULL) == 0);
+    ASSERT_TRUE(aead_decrypt(de_c, ciphertext, sizeof ciphertext, plaintext, NULL) == 0);
 
     ASSERT_TRUE(memcmp(data, plaintext, DATA_SIZE) == 0);
 }

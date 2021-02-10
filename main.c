@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
 #endif
 
     if (sodium_init() < 0) {
-        LOG_EXIT("sodium_init() failed.");
+        LOG_EXIT("sodium_init() failed");
     }
 
     for (int i = 1; i < argc; i++) {
