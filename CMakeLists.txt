@@ -1,43 +1,23 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.1.2)
 
 project(shadowsocks-libevent)
 
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_STANDARD_REQUIRED TRUE)
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_subdirectory(test)
+option(BUILD_TEST "Build the test program" ON)
 
-list(APPEND src
-        aead.c
-        cipher.c
-        context.c
-        server.c
-        client.c
-        proxy.c
-        socks.c
-        config.c
-        tcp.c
-        main.c)
+if(EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+    include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+    conan_basic_setup(TARGETS)
+else()
+    message(WARNING "The file conanbuildinfo.cmake doesn't exist, you have to run conan install first")
+endif()
 
-set(LIBEVENT_STATIC_LINK TRUE)
-find_package(Libevent REQUIRED core extra)
+add_subdirectory(src)
 
-find_library(MBEDCRYPTO libmbedcrypto.a)
-find_library(MBEDTLS libmbedtls.a)
-
-find_library(SODIUM libsodium.a)
-
-list(APPEND deps
-        libevent::core
-        libevent::extra
-
-        ${MBEDTLS}
-        ${MBEDCRYPTO}
-
-        ${SODIUM})
-
-add_executable(shadowsocks-libevent ${src})
-target_include_directories(shadowsocks-libevent PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(shadowsocks-libevent ${deps})
+if(BUILD_TEST)
+    add_subdirectory(test)
+endif()

@@ -3,8 +3,8 @@
 #include <gtest/gtest.h>
 #include <sodium.h>
 
-#include "../aead.h"
-#include "../cipher.h"
+#include "../src/aead.h"
+#include "../src/cipher.h"
 
 GTEST_TEST(KDF, derive_key) {
     const char* password = "hehe";

@@ -1,0 +1,8 @@
+[requires]
+libevent/2.1.12
+libsodium/1.0.18
+mbedtls/2.25.0
+gtest/cci.20210126
+
+[generators]
+cmake
