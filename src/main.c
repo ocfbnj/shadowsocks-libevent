@@ -1,6 +1,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef _WIN32
+#include <WS2tcpip.h>
+#include <WinSock2.h>
+#endif
+
 #include <sodium.h>
 
 #include "config.h"

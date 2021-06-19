@@ -2,6 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#include <WS2tcpip.h>
+#include <WinSock2.h>
+#endif
+
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
 #include <event2/dns.h>
@@ -42,7 +47,11 @@ static int connect_tgt_host(uint8_t* addr, struct bufferevent* bev, struct conte
         memset(&sock_addr, 0, sizeof sock_addr);
         sock_addr.sin_family = AF_INET;
         sock_addr.sin_addr = *(struct in_addr*)(addr + 1);
+#ifdef _WIN32
+        sock_addr.sin_port = *(USHORT*)(addr + port_offset);
+#else
         sock_addr.sin_port = *(in_port_t*)(addr + port_offset);
+#endif
 
         bufferevent_socket_connect(proxy_bev, (struct sockaddr*)&sock_addr, sizeof sock_addr);
     } break;
@@ -66,7 +75,11 @@ static int connect_tgt_host(uint8_t* addr, struct bufferevent* bev, struct conte
         memset(&sock_addr, 0, sizeof sock_addr);
         sock_addr.sin6_family = AF_INET6;
         sock_addr.sin6_addr = *(struct in6_addr*)(addr + 1);
+#ifdef _WIN32
+        sock_addr.sin6_port = *(USHORT*)(addr + port_offset);
+#else
         sock_addr.sin6_port = *(in_port_t*)(addr + port_offset);
+#endif
 
         bufferevent_socket_connect(proxy_bev, (struct sockaddr*)&sock_addr, sizeof sock_addr);
     } break;
